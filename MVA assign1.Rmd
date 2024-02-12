@@ -1,0 +1,261 @@
+---
+title: "Multivariate Assign1"
+author: "pg611@scarletmail.rutgers.edu"
+date: "2024-02-12"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+MULTIVARIATE ANALYSIS HOMEWORK 1
+
+
+
+
+
+I.	Ques to be analyse using this dataset: 
+
+
+
+
+
+•	What are the key factors influencing the severity and occurrence of layoffs in the tech industry?
+
+
+•	Are there any seasonal trends or patterns in the occurrence of tech layoffs?
+
+
+•	How does the size of a company (before and after layoffs) relate to the percentage of layoffs compared to total company size?
+
+
+•	Are there any notable differences in layoff trends between continents?
+
+
+
+
+
+
+
+
+II.	Why this question is important to me?
+
+
+This question is important to me as a master's student planning to enter the job market in 2025 because understanding the factors driving layoffs in the tech industry will provide valuable insights into the industry's dynamics and potential challenges I may face in my future career. By analyzing company characteristics, geographical factors, industry types, and temporal patterns, I can better prepare myself for potential career choices and navigate the job market more effectively. Additionally, gaining knowledge about these factors can help me make informed decisions about the types of companies and industries I may want to pursue for long-term career stability and growth.
+
+
+
+
+
+
+
+
+III.	Collected data and dependent and Independent variables
+
+Layoff Dataset ;
+
+[Download the Excel file](./Layoff Dataset.xlsx)
+
+
+
+
+Dependent Variable:
+
+•	Number of people laid off (Laid_Off)
+
+
+
+
+
+Independent Variables:
+
+•	Company Size before Layoffs (Company_Size_before_Layoffs)
+
+•	Company Size after Layoffs (Company_Size_after_layoffs)
+
+•	Money Raised in $ (Money_Raised_in_$_mil)
+
+•	Industry (Industry)
+
+•	Stage of Company (Stage)
+
+
+
+
+
+
+
+
+
+IV.	DATA DICTIONARY:
+
+•	"ID" - ID (unique number):
+
+Description: Unique identifier for each record.
+
+Data Type: Numeric (Integer).
+
+Example: 1, 2, 3, ...
+
+
+
+•	"Company":
+
+Description: Name of the company.
+
+Data Type: Text (String).
+
+Example: Microsoft, Google, Apple, ...
+
+
+
+•	"Location_HQ":
+
+Description: Location of the headquarters of the company.
+
+Data Type: Text (String).
+
+Example: San Francisco, Seattle, New York, ...
+
+
+
+•	"Country":
+
+Description: Country where the headquarters is located.
+
+Data Type: Text (String).
+
+Example: United States, United Kingdom, Germany, ...
+
+
+
+•	"Continent":
+
+Description: Continent where the headquarters is located.
+
+Data Type: Text (String).
+
+Example: North America, Europe, Asia, ...
+
+
+
+•	"Laid_Off":
+
+Description: Number of people who were laid off.
+
+Data Type: Numeric (Integer).
+
+Example: 100, 500, 1000, ...
+
+
+•	"Date_layoffs":
+
+Description: Date of layoffs.
+
+Data Type: Date.
+
+Example: 2023-05-15, 2024-02-01, ...
+
+
+
+•	"Percentage":
+
+Description: Percentage of layoffs compared to the total company size.
+
+Data Type: Numeric (Float).
+
+Example: 5.0, 10.5, 20.3, ...
+
+
+
+•	"Company_Size_before_Layoffs":
+
+Description: Size of the company before layoffs.
+
+Data Type: Numeric (Integer or Float).Example: 1000, 5000, 10000, ...
+
+
+
+
+•	"Company_Size_after_layoffs":
+
+Description: Size of the company after layoffs.
+
+Data Type: Numeric (Integer or Float).
+
+Example: 900, 4500, 9000, ...
+
+
+
+•	"Industry":
+
+Description: Industry the company is in.
+
+Data Type: Text (String).
+
+Example: Technology, Healthcare, Finance, ...
+
+
+
+•	"Stage":
+
+Description: Stage of the company (e.g., private, public).
+
+Data Type: Text (String).
+
+Example: Private, Public, Startup, ...
+
+
+
+•	"Money_Raised_in_$_mil":
+
+Description: Amount of money raised by the company in millions of dollars.
+
+Data Type: Numeric (Float).
+
+Example: 100.5, 250.2, 500.0, ...
+
+
+
+•	"Year":
+
+Description: Year of layoffs.
+
+Data Type: Numeric (Integer).
+
+Example: 2022, 2023, 2024, ...
+
+
+
+•	"lat":
+
+Description: Latitude of the headquarters.
+
+Data Type: Numeric (Float).
+
+Example: 37.7749, 47.6062, 40.7128, ...
+
+
+
+•	"lng":
+
+Description: Longitude of the headquarters.
+
+Data Type: Numeric (Float).
+
+Example: -122.4194, -122.3321, -74.0060, ...
+
+
+
+```{r cars}
+
+```
+
+
+```{r pressure, echo=FALSE}
+
+```
+
