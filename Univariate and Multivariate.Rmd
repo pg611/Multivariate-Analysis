@@ -1,0 +1,240 @@
+---
+title: "Univariate and Multivariate"
+author: "pg611@scarletmail.rutgers.edu"
+date: "2024-02-26"
+output: html_document
+---
+
+
+QUESTION : What insights can be derived from the calculated column means (layoff_cm) and covariance matrix
+```{r}
+# Load the data from the Excel file
+layoff_data <- read.csv("/Users/parul/OneDrive/LAYOFF1.csv")
+
+layoff_x <- layoff_data[, 7:10]
+layoff_x
+layoff_cm <- colMeans(layoff_x)
+layoff_S <- cov(layoff_x)
+layoff_d <- apply(layoff_x, MARGIN = 1, function(layoff_x)t(layoff_x - layoff_cm) %*% solve(layoff_S) %*% (layoff_x - layoff_cm))
+layoff_cm
+layoff_S
+layoff_d
+```
+
+INSIGHTS : The column means provide information about the average values of each variable in the dataset, while the covariance matrix reveals the relationships and variability between pairs of variables. Understanding these measures is crucial for assessing the central tendency and dispersion of the dataset.
+
+
+
+Question : How does the t-test results contribute to understanding the difference in the occurrence of layoffs (Yes/No)?
+```{r}
+with(data=layoff_data, t.test(Laid_Off[Laid_Off_Yes_No=="Yes"], Laid_Off[Laid_Off_Yes_No=="No"], var.equal=TRUE))
+```
+INSIGHTS : The t-test results provide statistical evidence on whether there is a significant difference in the occurrence of layoffs between the two groups. A significant difference suggests that the occurrence of layoffs differs between the "Laid_Off" (Yes) and "Laid_Off" (No) groups, providing insights into the likelihood of a layoff based on this variable.
+
+
+
+
+
+QUESTION : What insights can be gained from comparing the percentages between groups in terms of determining layoffs?
+
+```{r}
+with(data=layoff_data, t.test(Percentage[Laid_Off_Yes_No=="Yes"], Percentage[Laid_Off_Yes_No=="No"], var.equal=TRUE))
+```
+
+INSIGHTS : 
+The t-test results help determine if there is a significant difference in the percentages between the "Percentage" (Yes) and "Percentage" (No) groups. Understanding this difference provides insights into whether specific percentage thresholds are associated with the occurrence of layoffs.
+
+
+
+
+
+QUESTION : How do the results of the t-test inform us about the differences in company size before layoffs between groups with and without layoffs?
+
+```{r}
+with(data=layoff_data, t.test(Company_Size_before_Layoffs[Laid_Off_Yes_No=="Yes"], Company_Size_before_Layoffs[Laid_Off_Yes_No=="No"], var.equal=TRUE))
+```
+
+INSIGHTS : The t-test results indicate whether there is a significant difference in the company size before layoffs between the "Company_Size_before_Layoffs" (Yes) and "Company_Size_before_Layoffs" (No) groups. Understanding this difference provides insights into whether company size influences the occurrence of layoffs.
+
+
+
+
+
+QUESTION : What do the t-test results reveal about the differences in company size after layoffs between groups with and without layoffs?
+
+```{r}
+with(data=layoff_data, t.test(Company_Size_after_layoffs[Laid_Off_Yes_No=="Yes"], Company_Size_after_layoffs[Laid_Off_Yes_No=="No"], var.equal=TRUE))
+```
+ 
+INSIGHTS : The t-test results show whether there is a significant difference in the company size after layoffs between the "Company_Size_after_layoffs" (Yes) and "Company_Size_after_layoffs" (No) groups. Understanding this difference provides insights into the impact of layoffs on company size and whether layoffs affect the company's post-layoff size differently.
+
+
+
+
+QUESTION : How does the interpretation of the Hotelling's T-squared test results complement or differ from other tests conducted in the analysis?
+```{r}
+library(Hotelling)
+t2testsparr <- hotelling.test(cbind(Company_Size_before_Layoffs + Company_Size_after_layoffs + Percentage) ~ Laid_Off, data= layoff_data)
+# Output of the function hotelling.test is given
+cat("T2 statistic =",t2testsparr$stat[[1]],"\n")
+print(t2testsparr)
+
+var.test(layoff_data$Company_Size_before_Layoffs[layoff_data$Laid_Off_Yes_No=="Yes"],layoff_data$Company_Size_before_Layoffs[layoff_data$Laid_Off_Yes_No=="No"], var.equal=TRUE)
+attach(layoff_data)
+var.test(layoff_data$Company_Size_before_Layoffs[layoff_data$Laid_Off_Yes_No=="Yes"],layoff_data$Company_Size_before_Layoffs[layoff_data$Laid_Off_Yes_No=="No"], var.equal=TRUE)
+```
+
+INSIGHTS : The Hotelling's T-squared test considers multiple variables simultaneously, providing a comprehensive assessment of differences between groups in a multivariate context. It complements other tests, such as independent t-tests or ANOVA, by evaluating overall differences in multiple variables rather than focusing on individual variables. This holistic approach helps capture the collective impact of variables on the groups being compared.
+
+
+
+
+
+QUESTION : How does Hotelling's T-squared test on the combined standardized variables contribute to our understanding of group differences?
+```{r}
+matstand <- scale(layoff_data[,7:10])
+matstand
+matsurv <- matstand[Laid_Off_Yes_No=="Yes",]
+matsurv
+matnosurv <- matstand[Laid_Off_Yes_No=="No",]
+vecmediansurv <- apply(matsurv, 2, median)
+# in the above 2 represents column. Hence, we are asking for column median
+vecmediansurv
+
+vecmediannosurv <- apply(matnosurv, 2, median)
+matabsdevsurv <- abs(matsurv - matrix(rep(vecmediansurv,nrow(matsurv)),nrow=nrow(matsurv), byrow=TRUE))
+
+matabsdevnosurv <- abs(matnosurv - matrix(rep(vecmediannosurv,nrow(matnosurv)),nrow=nrow(matnosurv), byrow=TRUE))
+
+matabsdevnosurv
+
+matabsdev.all <- rbind(matabsdevsurv,matabsdevnosurv)
+matabsdev.all <- data.frame(Laid_Off_Yes_No, matabsdev.all)
+
+
+t.test(matabsdev.all$Percentage[Laid_Off_Yes_No == "Yes"],matabsdev.all$Percentage[Laid_Off_Yes_No == "No"], alternative="less",var.equal = TRUE)
+
+t.test(matabsdev.all$Company_Size_before_Layoffs[Laid_Off_Yes_No == "Yes"],matabsdev.all$Company_Size_before_Layoffs[Laid_Off_Yes_No == "No"], alternative="less",var.equal = TRUE)
+
+t.test(matabsdev.all$Company_Size_after_layoffs[Laid_Off_Yes_No == "Yes"],matabsdev.all$Company_Size_after_layoffs[Laid_Off_Yes_No == "No"], alternative="less",var.equal = TRUE)
+
+
+matstand
+
+matstand.all <- data.frame(Laid_Off_Yes_No, matstand)
+ncol(matstand.all)
+colnames(matstand.all) <- colnames(layoff_data[1:5])
+t2testsparr <- hotelling.test(Percentage+Company_Size_before_Layoffs+Company_Size_after_layoffs ~ Laid_Off_Yes_No,data=matstand.all)
+cat("T2 statistic =",t2testsparr$stat[[1]],"\n")
+print(t2testsparr)
+
+
+matabsdev.all
+
+```
+ 
+INSIGHTS : Hotelling's T-squared test evaluates whether there are significant differences in the means of multiple standardized variables between groups. The T2 statistic and associated p-value provide evidence of whether the mean vector of standardized variables differs significantly between layoffs (Yes) and layoffs (No) groups. This analysis accounts for the interrelationship between multiple variables, offering a comprehensive assessment of group differences in a multivariate context.
+
+
+
+QUESTION : How does dij differ from the variables examined in previous tests?
+```{r}
+d.all <- data.frame(Laid_Off_Yes_No,sqrt(rowSums(matabsdev.all[,-1]^2)))
+d.all
+colnames(d.all)[2] <- "dij"
+d.all
+head(d.all)
+with(d.all, t.test(dij[Laid_Off_Yes_No=="Yes"], dij[Laid_Off_Yes_No=="No"],var.equal=TRUE, alternative="less"))
+sprintf("d-values for Layoff: Mean = %2.3f, Variance = %2.3f",mean(d.all$dij[Laid_Off_Yes_No=="Yes"]),var(d.all$dij[Laid_Off_Yes_No=="Yes"]))
+sprintf("d-values for No Layoff: Mean = %2.3f, Variance = %2.3f",mean(d.all$dij[Laid_Off_Yes_No=="No"]),var(d.all$dij[Laid_Off_Yes_No=="No"]))
+```
+
+INSIGHTS : By assigning the appropriate column name (dij) to the second column of d.all, the dataframe structure is clarified, enhancing readability and interpretability.
+
+
+
+
+
+QUESTION : What does Levene's Test conducted using the library(car) package reveal about the homogeneity of variances for "Percentage," "Company_Size_before_Layoffs," and "Company_Size_after_layoffs" between layoffs (Yes) and layoffs (No) groups?
+
+```{r}
+library(car)
+leveneTest(Percentage ~ Laid_Off_Yes_No, data=layoff_data)
+#leveneTest() produces a two-sided test
+leveneTest(Company_Size_before_Layoffs ~ Laid_Off_Yes_No, data=layoff_data)
+leveneTest(Company_Size_after_layoffs ~ Laid_Off_Yes_No, data=layoff_data)
+
+
+```
+
+INSIGHTS : Levene's Test, a two-sided test performed using the library(car) package, examines whether the variances of "Percentage," "Company_Size_before_Layoffs," and "Company_Size_after_layoffs" significantly differ between layoffs (Yes) and layoffs (No) groups.
+
+
+
+QUESTION : What does the summary of ANOVA results reveal about the differences in mean percentages between layoffs (Yes) and layoffs (No) groups?
+
+```{r}
+# ANOVA
+summary(aov(Percentage ~ Laid_Off_Yes_No))
+summary(aov(Company_Size_before_Layoffs ~ Laid_Off_Yes_No))
+summary(aov(Company_Size_after_layoffs ~ Laid_Off_Yes_No))
+
+```
+
+INSIGHTS : Collectively, these analyses contribute to a comprehensive understanding of how layoffs may influence various aspects, encompassing percentages, company size before layoffs, and company size after layoffs.
+
+
+
+
+
+QUESTION : What is the purpose of using Mahalanobis distance in this analysis, and how does it relate to the dataset?
+```{r}
+# mahalanobis
+library(stats)
+
+layoff_MD <- mahalanobis(layoff_x, layoff_cm, layoff_S)
+layoff_MD
+layoff_data$pvalues <- pchisq(layoff_MD, df=3, lower.tail=FALSE)
+layoff_data
+
+```
+
+INSIGHTS: The Mahalanobis distance is a measure of the distance between a point and a distribution. In this context, it helps to identify outliers or unusual data points in the dataset relative to the distribution defined by the mean and covariance matrix. Understanding the Mahalanobis distance provides insights into the distribution of data points and their relationship to the central tendency and variability of the dataset.
+
+
+
+
+QUESTION : What is the purpose of conducting the Box's M Test in this analysis?
+
+```{r}
+# BoxM
+
+library(biotools)
+boxM(layoff_data[,7:10],Laid_Off_Yes_No)
+
+```
+INSIGHTS : The Box's M Test is conducted to assess whether there are significant differences in the multivariate means or distributions of the variables between the "Laid_Off" (Yes) and "Laid_Off" (No) groups.
+
+
+
+
+
+
+
+QUESTION : How does the MANOVA analysis contribute to understanding the relationship between the independent variable (Laid_Off_Yes_No) and multiple dependent variables (Percentage, Company_Size_before_Layoffs, Company_Size_after_layoffs)?
+```{r}
+# MANOVA
+# Check for missing values in the Laid_Off_Yes_No variable
+
+layoff_data$Laid_Off_Yes_No <- as.factor(layoff_data$Laid_Off_Yes_No)
+
+# Run MANOVA analysis
+manova_result <- manova(cbind(Percentage, Company_Size_before_Layoffs, Company_Size_after_layoffs) ~ Laid_Off_Yes_No, data = layoff_data)
+
+# Summary of MANOVA results
+summary(manova_result)
+
+```
+
+INSIGHTS : The MANOVA analysis allows us to simultaneously assess the impact of layoffs (Yes/No) on multiple dependent variables, namely Percentage, Company_Size_before_Layoffs, and Company_Size_after_layoffs.
+By converting the Laid_Off_Yes_No variable into a factor, we ensure that it is treated as a categorical variable in the analysis, allowing for appropriate comparison between groups.
