@@ -66,10 +66,36 @@ layoff_pca$rotation
 print(layoff_pca)
 ```
 
+
+QUESTION : Decide how many Principal Components (PCs) you want to keep and why 
+
+
+ANSWER : The summary of PCA indicates the standard deviation and proportion of variance explained by each PC. In this case, the first PC (PC1) explains 67.45% of the variance, while the second PC (PC2) explains 32.53% of the variance. The cumulative proportion of variance explained by PC1 and PC2 is approximately 99.99%, indicating that these two PCs capture almost all of the variance in the data.
+
+Based on these values, you could consider retaining two principal components (PCs) because:
+
+PC1 and PC2 together explain almost all of the variance in the data (99.99% cumulative proportion of variance explained).
+Retaining only two PCs simplifies the analysis while still capturing the majority of the variability in the original data.
+
+
 ```{r}
 layoff_pca$x
 ```
 
+QUESTION : Explain the variate representation each PCs
+
+
+
+
+ANSWER 2 :
+
+PC1: The first principal component is primarily characterized by a positive loading for the variable "Percentage" (0.1514), indicating a positive correlation between this variable and PC1. The other two variables, "Company_Size_before_Layoffs" and "Company_Size_after_layoffs," have negative loadings, indicating a negative correlation with PC1.
+
+PC2: The second principal component has a strong negative loading for the variable "Percentage" (-0.9885), indicating a strong negative correlation between this variable and PC2. The other variables have relatively smaller loadings, with both "Company_Size_before_Layoffs" and "Company_Size_after_layoffs" having negative loadings.
+
+PC3: The third principal component has very small loadings for all variables, suggesting that it explains very little variance in the original data compared to PC1 and PC2. The variable "Percentage" has a slightly positive loading, while the other variables have negligible loadings.
+
+In summary, PC1 captures the overall variation in the data related to the "Percentage" variable, while PC2 captures the variation mostly in "Company_Size_before_Layoffs" and "Company_Size_after_layoffs," with an emphasis on the negative correlation with "Percentage." PC3 contributes very little to the overall variance explained by the principal components and may not be meaningful for interpretation based on the provided rotation matrix.
 ```{r}
 layofftyp_pca <- cbind(data.frame(layoff$Laid_Off_Yes_No),layoff_pca$x)
 layofftyp_pca
@@ -142,6 +168,12 @@ plot(layoff_pca)
 ```
 
 
+
+
+In addition to the correlation matrix and the summary of principal components (PCs), the scree plot also supports the decision to retain two principal components (PCs) in the analysis.
+
+
+
 ```{r}
 #get the original value of the data based on PCA
 center <- layoff_pca$center
@@ -173,6 +205,7 @@ library(corrplot)
 library(devtools)
 ```
 
+VISUALIZATIONS:
 
 ```{r}
 # Correlation
@@ -302,15 +335,7 @@ fviz_pca_ind(res.pca,
 ```
 
 ```{r}
-# Description of PC
 
-res.desc <- dimdesc(res.pca, axes = c(1,2,3,4,5), proba = 0.05)
-# Description of dimension 1
-res.desc$Dim.1
-res.desc$Dim.2
-res.desc$Dim.3
-res.desc$Dim.4
-res.desc$Dim.5
 ```
 
 ```{r}
@@ -351,12 +376,7 @@ fviz_contrib(res.pca, choice = "ind", axes = 1:2)
 ```
 
 ```{r}
-set.seed(123)
-my.cont.var <- rnorm(49)
-# Color individuals by the continuous variable
-fviz_pca_ind(res.pca, col.ind = my.cont.var,
-             gradient.cols = c("blue", "yellow", "red"),
-             legend.title = "Cont.Var")
+
 ```
 
 ```{r}
@@ -430,29 +450,6 @@ ggpubr::ggpar(ind.p,
 ```
 
 ```{r}
-fviz_pca_biplot(res.pca, repel = TRUE,col.ind = layoff$Laid_Off_Yes_No,
-                col.var = "#2E9FDF", # Variables color
-)
-
-fviz_pca_biplot(res.pca, 
-                col.ind = layoff$Laid_Off_Yes_No, palette = "jco", 
-                addEllipses = TRUE, label = "var",
-                col.var = "black", repel = TRUE,
-                legend.title = "Laid Off") 
-
-fviz_pca_biplot(res.pca, 
-                # Fill individuals by groups
-                geom.ind = "point",
-                pointshape = 21,
-                pointsize = 2.5,
-                fill.ind = layoff$Laid_Off_Yes_No,
-                col.ind = "black",
-                # Color variable by groups
-                legend.title = list(fill = "Laid Off", color = "Clusters"),
-                repel = TRUE        # Avoid label overplotting
-)+
-  ggpubr::fill_palette("jco")+      # Indiviual fill color
-  ggpubr::color_palette("npg")      # Variable colors
 
 ```
 
