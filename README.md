@@ -9,7 +9,9 @@
 # Dataset 
 Source and Editing
 The dataset of Layoff has been considered from Kaggle.
+
 Reference: https://www.kaggle.com/datasets/ulrikeherold/tech-layoffs-2020-2024/data
+
 The questions and the solutions are mentioned below.
 
 
@@ -53,8 +55,11 @@ lng - longitude of headquarter
 
 
 I. 	What are the key factors influencing the severity and occurrence of layoffs in the tech industry?
+
 II. Are there any seasonal trends or patterns in the occurrence of tech layoffs?
+
 III.How does the size of a company (before and after layoffs) relate to the percentage of layoffs compared to total company size?
+
 IV. Are there any notable differences in layoff trends between continents?
 
 
