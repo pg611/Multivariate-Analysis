@@ -1,0 +1,193 @@
+---
+title: "Factor Analysis"
+author: "pg611@scarletmail.rutgers.edu"
+date: "2024-03-18"
+output: html_document
+---
+
+```{r}
+# Factor Analysis
+
+library(psych)
+
+layoffdataset <- read.csv("/Users/parul/OneDrive/Desktop/MVA/Layoff_Data.csv", row.names=1)
+
+```
+
+
+
+```{r}
+attach(layoffdataset)
+cov(layoffdataset[,-1])
+cor(layoffdataset[,-1])  #see the highest correlating columns, like in these its agr and sps
+layoffdataset[1]
+```
+
+
+
+```{r}
+fit.pc <- principal(layoffdataset[-1], nfactors=4, rotate="varimax") #giving random number of factors to determine the factors
+fit.pc
+```
+
+
+```{r}
+#fit.pc <- principal(layoffdataset[-1], nfactors=3, rotate="varimax") #giving random number of factors to determine the factors
+#fit.pc
+```
+
+
+
+```{r}
+round(fit.pc$values, 3)
+fit.pc$loadings
+```
+
+
+```{r}
+# Loadings with more digits
+for (i in c(1,3,2,4)) { print(fit.pc$loadings[[1,i]])}
+```
+
+
+
+```{r}
+# Communalities
+fit.pc$communality
+```
+
+
+
+```{r}
+# Rotated factor scores, Notice the columns ordering: RC1, RC3, RC2 and RC4
+fit.pc$scores
+```
+
+
+
+```{r}
+# Play with FA utilities
+
+fa.parallel(layoffdataset[-1]) # See factor recommendation
+
+```
+
+
+
+
+#QUESTION 1 : Decide how many Factors are ideal for your dataset
+
+
+
+#ANSWER 1 : The ideal number of factors for a dataset is determined using techniques like parallel analysis. In this case, parallel analysis suggests that the dataset is best represented by 2 factors.
+
+
+
+
+
+# QUESTION 2 : Explain the output for your factor model
+
+
+
+#ANSWER 2 : The output of factor model includes :
+
+
+# •	Standardized loadings: Correlations between original variables and extracted factors (RC1, RC2, RC3, RC4).
+
+
+# •	SS loadings: Sum of squared loadings for each factor, indicating variance explained.
+
+
+# •	Proportion Var: Proportion of total variance explained by each factor.
+
+
+# •	Cumulative Var: Cumulative proportion of total variance explained.
+
+
+# •	Test of Hypothesis: Assesses if the selected factors sufficiently explain the data.
+
+
+# •	Fit Based on Off Diagonal Values: Indicates model fit based on off-diagonal values.
+
+
+
+
+
+#QUESTION 3 : Show the columns that go into each factor
+
+
+
+# ANSWER 3 : Columns Contribution to Factors:
+
+
+
+# •	RC1: "Before_Layoffs" and "After_layoffs" contribute significantly to RC1, indicating a strong association between these variables.
+
+
+# •	RC2: "lat" and "lng" contribute most to RC2, suggesting a relationship between location coordinates.
+
+
+# •	RC3: "Money_Raised_in_._mil" predominantly influences RC3, indicating its strong impact on this factor.
+
+
+# •	RC4: "Percentage" variable contributes primarily to RC4, suggesting it's a significant determinant of this factor.
+
+
+
+
+# QUESTION 4 : Perform some visualizations using the factors
+
+
+
+# ANSWER : Here are the visualizations below :
+
+
+
+```{r}
+fa.plot(fit.pc) # See Correlations within Factors
+
+```
+
+
+```{r}
+fa.diagram(fit.pc) # Visualize the relationship
+
+```
+
+
+
+```{r}
+vss(layoffdataset[-1]) # See Factor recommendations for a simple structure
+```
+
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
+
+```{r}
+
+```
+
