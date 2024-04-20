@@ -1,0 +1,229 @@
+---
+title: "Logistic_Regression_Layoff"
+author: "pg611@scarletmail.rutgers.edu"
+date: "2024-04-19"
+output: html_document
+---
+
+```{r}
+library(ggplot2)
+library(cowplot)
+library(caret)
+library(e1071)
+library(pROC)
+
+
+data <- read.csv("/Users/parul/OneDrive/Desktop/MVA/Layoff_Data.csv", row.names=1)
+data
+head(data)
+colnames(data) <- c("Laid_Off", "Percentage", "Before_Layoff", "After_Layoff", "Money_raised", "lat", "lng", "laid_yes_no", "layoff")
+head(data)
+str(data)
+```
+
+# DATA CLEANING
+
+```{r}
+data[data == "?"] <- NA
+data$Laid_Off <- as.factor(data$Laid_Off)
+data$Percentage <- as.factor(data$Percentage)
+data$Before_Layoff <- as.factor(data$Before_Layoff)
+data$After_Layoff <- as.factor(data$After_Layoff)
+data$Money_raised <- as.factor(data$Money_raised)
+data$lat <- as.factor(data$lat)
+data$lng <- as.factor(data$lng)
+data$laid_yes_no <- as.factor(data$laid_yes_no)
+data$layoff <- as.factor(data$layoff)
+
+data$Laid_Off <- as.numeric(as.character(data$Laid_Off))
+data$Laid_Off <- cut(data$Laid_Off, breaks = c(-Inf, 200, Inf), labels = c("Less layoff", "More layoff"))
+
+data$Percentage <- as.numeric(as.character(data$Percentage))
+data$Percentage <- cut(data$Percentage, breaks = c(-Inf, 25, Inf), labels = c("Less percent", "More percent"))
+
+
+data$Before_Layoff <- as.numeric(as.character(data$Before_Layoff))
+data$Before_Layoff <- cut(data$Before_Layoff, breaks = c(-Inf, 2500, Inf), labels = c("Less people laidoff", "More people laidoff"))
+
+
+data$After_Layoff <- as.numeric(as.character(data$After_Layoff))
+data$After_Layoff <- cut(data$After_Layoff, breaks = c(-Inf, 2500, Inf), labels = c("Less people layoff", "More people layoff"))
+
+data$Money_raised <- as.numeric(as.character(data$Money_raised))
+data$Money_raised <- cut(data$Money_raised, breaks = c(-Inf, 1000, Inf), labels = c("Less money", "More money"))
+
+data$lat<- as.numeric(as.character(data$lat))
+data$lat <- cut(data$lat, breaks = c(-Inf, 35, Inf), labels = c("Less distance", "More distance"))
+
+data$lng <- as.numeric(as.character(data$lng))
+data$lng <- cut(data$lng, breaks = c(-Inf, 35, Inf), labels = c("Less distance", "More distance"))
+
+str(data)
+
+```
+
+
+# MODEL DEVELOPMENT
+
+```{r}
+## Exploratory Analysis
+
+xtabs(~ layoff + Laid_Off, data=data) # TO READ : HEALTHY FEMALE/TOTAL FEMALE = VALUE, WE CAN SEE MAN IS UNHEALTHY AS COMPARED TO FEMALES AS MALES ARE AROUND APPROX 45% HEALTHY WHILE FEMALES ARE 71% HEALTHY
+xtabs(~ layoff + Percentage, data=data)
+xtabs(~ layoff + Before_Layoff, data=data)
+xtabs(~ layoff + After_Layoff, data=data)
+xtabs(~ layoff + Money_raised, data=data)
+xtabs(~ layoff + lat, data=data)
+xtabs(~ layoff + lng, data=data)
+
+
+logistic_simple <- glm(layoff ~ After_Layoff, data=data, family="binomial")
+summary(logistic_simple)
+
+```
+
+INSIGHTS :
+
+The logistic regression model predicts the probability of being laid off based on the after layoff status.
+
+The coefficient for "After_Layoff- More people layoff" is 1.9459, indicating that the odds of being laid off increase by approximately e raised to the power 1.9459 times when more people are laid off after the event.
+
+The model shows statistical significance (p < 0.05) for the predictor variable "After_Layoff," suggesting that it is a significant predictor of layoffs.
+
+
+# MODEL ACCEPTANCE
+
+```{r}
+Less_people_layoff.log.odds <- log(9/ 28)
+Less_people_layoff.log.odds
+
+more_people_layoff.log.odds.ratio <- log((9 / 4) / (9/28))
+more_people_layoff.log.odds.ratio
+
+```
+
+INSIGHTS :
+
+Less People Layoff Log Odds:
+The log odds of individuals facing less layoff compared to not facing layoffs is approximately -1.13498.
+More People Layoff Log Odds Ratio:
+The log odds ratio of individuals facing more layoff compared to less layoff is approximately 1.94591.
+
+# PREDICTION
+
+```{r}
+predicted.data <- data.frame(probability.of.hd=logistic_simple$fitted.values,After_Layoff=data$After_Layoff)
+predicted.data
+
+xtabs(~ probability.of.hd + After_Layoff, data=predicted.data)
+logistic <- glm(layoff ~ ., data=data, family="binomial")
+summary(logistic)
+
+```
+
+INSIGHTS : 
+
+It shows that among companies with a predicted probability of layoffs around 24.3%, 37 are predicted to have "Less people layoff," and none are predicted to have "More people layoff." On the other hand, among companies with a predicted probability of layoffs around 69.2%, none are predicted to have "Less people layoff," and 13 are predicted to have "More people layoff."
+
+# RESIDUAL ANALYSIS
+
+```{r}
+## Now calculate the overall "Pseudo R-squared" and its p-value
+ll.null <- logistic$null.deviance/-2
+ll.proposed <- logistic$deviance/-2
+(ll.null - ll.proposed) / ll.null
+## The p-value for the R^2
+1 - pchisq(2*(ll.proposed - ll.null), df=(length(logistic$coefficients)-1))
+predicted.data <- data.frame(probability.of.hd=logistic$fitted.values,layoff=data$layoff)
+predicted.data <- predicted.data[order(predicted.data$probability.of.hd, decreasing=FALSE),]
+predicted.data$rank <- 1:nrow(predicted.data)
+## Lastly, we can plot the predicted probabilities for each sample having
+## heart disease and color by whether or not they actually had heart disease
+ggplot(data=predicted.data, aes(x=rank, y=probability.of.hd)) +
+  geom_point(aes(color=layoff), alpha=1, shape=4, stroke=2) +
+  xlab("Index") +
+  ylab("Predicted probability of layoff")
+
+
+pdata <- predict(logistic,newdata=data,type="response" )
+pdata
+data$layoff
+pdataF <- as.factor(ifelse(test=as.numeric(pdata>0.5) == 0, yes="0", no="1"))
+
+
+```
+
+INSIGHTS :
+
+The p-value associated with the R-squared value is extremely low (4.130363e-11), suggesting that the model significantly improves the fit compared to the null model.
+
+The code converts the predicted probabilities (pdata) into a factor variable (pdataF) based on a threshold of 0.5. If the predicted probability is greater than 0.5, it's classified as "1" (indicating layoffs), otherwise as "0" (no layoffs).
+
+# ACCURACY 
+
+```{r}
+confusionMatrix(pdataF, data$layoff)
+
+roc(data$layoff,logistic$fitted.values,plot=TRUE)
+par(pty = "s")
+roc(data$layoff,logistic$fitted.values,plot=TRUE)
+
+
+roc(data$layoff,logistic$fitted.values,plot=TRUE, legacy.axes=TRUE)
+roc(data$layoff,logistic$fitted.values,plot=TRUE, legacy.axes=TRUE, xlab="False Positive Percentage", ylab="True Postive Percentage")
+
+roc(data$layoff,logistic$fitted.values,plot=TRUE, legacy.axes=TRUE, xlab="False Positive Percentage", ylab="True Postive Percentage", col="#377eb8", lwd=4)
+roc(data$layoff,logistic$fitted.values,plot=TRUE, legacy.axes=TRUE, xlab="False Positive Percentage", ylab="True Postive Percentage", col="#377eb8", lwd=4)
+
+roc.info <- roc(data$layoff, logistic$fitted.values, legacy.axes=TRUE)
+str(roc.info)
+
+roc.df <- data.frame(tpp=roc.info$sensitivities*100, fpp=(1 - roc.info$specificities)*100,thresholds=roc.info$thresholds)
+roc.df
+head(roc.df) 
+
+tail(roc.df) 
+
+roc.df[roc.df$tpp > 60 & roc.df$tpp < 80,]
+roc(data$layoff,logistic$fitted.values,plot=TRUE, legacy.axes=TRUE, xlab="False Positive Percentage", ylab="True Postive Percentage", col="#377eb8", lwd=4, percent=TRUE)
+roc(data$layoff,logistic$fitted.values,plot=TRUE, legacy.axes=TRUE, xlab="False Positive Percentage", ylab="True Postive Percentage", col="#377eb8", lwd=4, percent=TRUE, print.auc=TRUE)
+roc(data$layoff,logistic$fitted.values,plot=TRUE, legacy.axes=TRUE, xlab="False Positive Percentage", ylab="True Postive Percentage", col="#377eb8", lwd=4, percent=TRUE, print.auc=TRUE, partial.auc=c(100, 90), auc.polygon = TRUE, auc.polygon.col = "#377eb822", print.auc.x=45)
+
+roc(data$layoff, logistic_simple$fitted.values, plot=TRUE, legacy.axes=TRUE, percent=TRUE, xlab="False Positive Percentage", ylab="True Postive Percentage", col="#377eb8", lwd=4, print.auc=TRUE)
+
+plot.roc(data$layoff, logistic$fitted.values, percent=TRUE, col="#4daf4a", lwd=4, print.auc=TRUE, add=TRUE, print.auc.y=40)
+legend("bottomright", legend=c("Simple", "Non Simple"), col=c("#377eb8", "#4daf4a"), lwd=4) 
+
+
+```
+
+INSIGHTS : The confusion matrix provides a summary of the model's performance in terms of true positives, true negatives, false positives, and false negatives.
+In this case, the accuracy of the model is 1, indicating that it correctly classified all instances in the dataset.
+
+The ROC curve is a graphical representation of the trade-off between the true positive rate (sensitivity) and the false positive rate (1 - specificity) for different threshold values.
+An area under the curve (AUC) value of 1 indicates a perfect classifier, while an AUC of 0.5 suggests a random classifier.
+```{r}
+
+
+```
+
+```{r}
+
+
+```
+
+```{r}
+
+
+```
+
+```{r}
+
+
+```
+
+```{r}
+
+
+```
+
