@@ -1,0 +1,142 @@
+---
+title: "Discriminant Analysis"
+author: "pg611@scarletmail.rutgers.edu"
+date: "2024-04-25"
+output: html_document
+---
+
+```{r}
+library(MASS)
+library(ggplot2)
+library(memisc)
+library(ROCR)
+library(dplyr)
+library(klaR)
+
+wdbc <- read.csv("/Users/parul/OneDrive/Desktop/MVA/Layoff_Data.csv")
+dim(wdbc)
+str(wdbc)
+features <- c("Laid_Off", "Percentage", "Before_Layoff", "After_Layoff", "Money_raised", "lat", "lng", "laid_yes_no", "layoff")
+names(wdbc) <- c("Company", "Laid_Off", "Percentage", "Before_Layoff", "After_Layoff", "Money_raised", "lat", "lng", "laid_yes_no", "layoff")
+
+wdbc.data <- as.matrix(wdbc[,c(2:8)])
+row.names(wdbc.data) <- wdbc$Company
+wdbc_raw <- cbind(wdbc.data, as.numeric(as.factor(wdbc$laid_yes_no))-1)
+colnames(wdbc_raw)[8] <- "LayoffYesNo"
+smp_size_raw <- floor(0.75 * nrow(wdbc_raw))
+train_ind_raw <- sample(nrow(wdbc_raw), size = smp_size_raw)
+train_raw.df <- as.data.frame(wdbc_raw[train_ind_raw, ])
+test_raw.df <- as.data.frame(wdbc_raw[-train_ind_raw, ])
+```
+
+
+# MODEL DEVELOPMENT :
+```{r}
+wdbc_raw.lda <- lda(formula = train_raw.df$LayoffYesNo ~ ., data = train_raw.df)
+wdbc_raw.lda
+
+```
+INSIGHTS : 
+
+Prior Probabilities of Groups:
+
+The prior probabilities represent the likelihood of each class occurring in the dataset before considering any predictor variables.
+In this case, the prior probability of class 0 (no layoff) is approximately 0.622, while the prior probability of class 1 (layoff) is approximately 0.378.
+
+Group Means:
+Group means provide the average values of each predictor variable for each class.
+For class 0 (no layoff), the average values of 'Laid_Off', 'Percentage', 'Before_Layoff', 'After_Layoff', 'Money_raised', 'lat', and 'lng' are 93.52, 19.48, 1429.09, 1335.78, 467.61, 36.87, and -73.08 respectively.
+For class 1 (layoff), the corresponding average values are 478.86, 27.50, 4272.43, 3793.57, 2455.71, 39.00, and -88.36 respectively.
+These values provide insights into the characteristics of each class.
+
+Coefficients of Linear Discriminants (LD1):
+The coefficients represent the weights assigned to each predictor variable in the linear combination used to discriminate between the classes.
+Larger absolute values of coefficients indicate a stronger influence of the corresponding variable on the classification.
+
+
+
+
+
+# MODEL ACCEPTANCE :
+```{r}
+summary(wdbc_raw.lda)
+print(wdbc_raw.lda)
+plot(wdbc_raw.lda)
+```
+Insights : 
+
+The plot of the Linear Discriminant Analysis (LDA) model indicates distinct groupings for class 0 and class 1 along the LD1 axis.
+
+This separation along the LD1 axis suggests clear discrimination between the two classes based on the linear combination of predictor variables. The transition from negative to positive LD1 values signifies the shift from one class to another, highlighting the effectiveness of the LDA model in distinguishing between the groups based on their characteristics.
+
+
+# ACCURACY :
+```{r}
+# Lets focus on accuracy. Table function
+wdbc_raw.lda.predict_train <- predict(wdbc_raw.lda, newdata = train_raw.df)
+y<-wdbc_raw.lda.predict_train$class
+wdbc_raw.lda.predict_train$x
+table(y,train_raw.df$LayoffYesNo)
+
+# running accuracy on the training set shows how good the model is. It is not an indication of "true" accuracy. We will use the test set to approximate accuracy
+wdbc_raw.lda.predict <- predict(wdbc_raw.lda, newdata = test_raw.df)
+wdbc_raw.lda.predict$class
+y<-wdbc_raw.lda.predict$x
+table(y,test_raw.df$LayoffYesNo)
+
+```
+INSIGHTS : 
+
+The output of the LDA model's prediction on the training dataset reveals LD1 values for each observation, indicating their position along the discriminant axis. 
+
+The subsequent table shows the number of instances correctly classified into each class compared to the actual classes in the training dataset, with 23 instances classified as class 0 and 7 instances as class 1. Similarly, predictions on the test dataset show LD1 values corresponding to each observation and their associated class labels. LD1 values above 0 tend to be class 1, while values below 0 tend to be class 0, aligning with the expected class labels in the test dataset.
+
+
+# RESIDUAL ANALYSIS:
+```{r}
+# Get the posteriors as a dataframe.
+wdbc_raw.lda.predict.posteriors <- as.data.frame(wdbc_raw.lda.predict$posterior)
+
+```
+INSIGHTS 
+
+The residual analysis aims to assess the accuracy of the Linear Discriminant Analysis (LDA) model by examining the discrepancies between the predicted class probabilities and the actual class labels.
+
+
+# PREDICTION :
+```{r}
+pred <- prediction(wdbc_raw.lda.predict.posteriors[,2], test_raw.df$LayoffYesNo)
+roc.perf = performance(pred, measure = "tpr", x.measure = "fpr")
+auc.train <- performance(pred, measure = "auc")
+auc.train <- auc.train@y.values
+plot(roc.perf)
+abline(a=0, b= 1)
+text(x = .25, y = .65 ,paste("AUC = ", round(auc.train[[1]],3), sep = ""))
+
+
+
+plot(wdbc_raw.lda, col = as.integer(train_raw.df$LayoffYesNo))
+
+plot(wdbc_raw.lda, dimen = 1, type = "b")
+
+m <- manova(cbind(wdbc$Laid_Off,wdbc$Percentage,wdbc$Before_Layoff,wdbc$After_Layoff, wdbc$Money_raised)~wdbc$laid_yes_no,data=wdbc)
+summary(m,test="Wilks")
+
+summary(m,test="Pillai")
+
+summary.aov(m)
+
+```
+
+INSIGHTS :
+
+Wilks' Test:
+The Wilks' Lambda test assesses the significance of the relationship between the predictors and the response variable.
+The results indicate a statistically significant relationship between the predictor variables and the response variable, as evidenced by the small p-value (6.035e-06), suggesting rejection of the null hypothesis.
+Pillai's Test:
+Pillai's trace is another measure of the relationship between the predictors and the response variable.
+Similar to Wilks' test, Pillai's trace yields a small p-value (6.035e-06), indicating a significant relationship between the predictor variables and the response variable.
+ANOVA Summary for Each Response Variable:
+For each response variable (Laid_Off, Percentage, Before_Layoff, After_Layoff, Money_raised), ANOVA tests are conducted to assess the significance of the relationship with the response variable (laid_yes_no).
+The results show varying levels of significance across the response variables.
+For instance, for Laid_Off, there is a highly significant relationship with the response variable (p-value: 1.023e-08), whereas for the other variables, the relationship is not significant at the conventional significance level of 0.05.
