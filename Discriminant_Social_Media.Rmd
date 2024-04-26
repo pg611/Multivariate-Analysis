@@ -1,0 +1,144 @@
+---
+title: "Discriminant_Social_Media"
+author: "pg611@scarletmail.rutgers.edu"
+date: "2024-04-25"
+output: html_document
+---
+
+```{r }
+library(MASS)
+library(ggplot2)
+library(memisc)
+library(ROCR)
+library(dplyr)
+library(klaR)
+
+wdbc <- read.csv("/Users/parul/OneDrive/Desktop/MVA/Midterm_new.csv")
+dim(wdbc)
+str(wdbc)
+features <- c("Instagram", "LinkedIn", "Snapchat", "Twitter", "Whatsapp", "Youtube", "OTT", "Reddit", "Trouble_sleep", "Mood", "Tired_morning")
+names(wdbc) <- c("ID", "Instagram", "LinkedIn", "Snapchat", "Twitter", "Whatsapp", "Youtube", "OTT", "Reddit", "Trouble_sleep", "Mood", "Tired_morning")
+
+wdbc.data <- as.matrix(wdbc[,c(2:9)])
+row.names(wdbc.data) <- wdbc$ID
+wdbc_raw <- cbind(wdbc.data, as.numeric(as.factor(wdbc$Trouble_sleep))-1)
+colnames(wdbc_raw)[9] <- "TroubleInSleep"
+smp_size_raw <- floor(0.75 * nrow(wdbc_raw))
+train_ind_raw <- sample(nrow(wdbc_raw), size = smp_size_raw)
+train_raw.df <- as.data.frame(wdbc_raw[train_ind_raw, ])
+test_raw.df <- as.data.frame(wdbc_raw[-train_ind_raw, ])
+
+```
+
+
+
+# MODEL DEVELOPMENT
+```{r }
+
+wdbc_raw.lda <- lda(formula = train_raw.df$TroubleInSleep ~ ., data = train_raw.df)
+wdbc_raw.lda
+
+```
+INSIGHTS :
+
+Prior Probabilities of Groups:
+The prior probabilities indicate the distribution of classes within the dataset, with class 0 having a higher probability (60%) compared to class 1 (40%).
+
+Group Means:
+Group means provide insights into the average social media usage patterns for each class (0 and 1) corresponding to the absence and presence of trouble in sleep.
+Class 0 (no trouble in sleep) tends to have higher mean usage across Instagram, LinkedIn, Snapchat, Twitter, Whatsapp, and OTT, while class 1 (trouble in sleep) exhibits higher mean usage for Youtube and Reddit.
+
+Coefficients of Linear Discriminants:
+The coefficients of linear discriminants represent the weights assigned to each predictor variable in the discriminant function.
+Positive coefficients (e.g., Twitter, Whatsapp, OTT) indicate variables that contribute positively to the discrimination between classes, suggesting higher usage of these platforms may be associated with trouble in sleep.
+Negative coefficients (e.g., Instagram, LinkedIn, Youtube, Reddit) suggest variables negatively associated with trouble in sleep, implying lower usage of these platforms may be indicative of better sleep quality.
+
+
+# MODEL ACCEPTANCE
+```{r }
+summary(wdbc_raw.lda)
+print(wdbc_raw.lda)
+plot(wdbc_raw.lda)
+
+```
+INSIGHTS :
+
+The plot of the LDA model reveals the distribution of classes in the discriminant space.
+Overlapping between -1 and 0 suggests some level of ambiguity or similarity between the classes in this region.
+
+
+
+# ACCURACY
+
+```{r }
+
+wdbc_raw.lda.predict_train <- predict(wdbc_raw.lda, newdata = train_raw.df)
+y<-wdbc_raw.lda.predict_train$class
+wdbc_raw.lda.predict_train$x
+table(y,train_raw.df$TroubleInSleep)
+
+wdbc_raw.lda.predict_test <- predict(wdbc_raw.lda, newdata = test_raw.df)
+y<-wdbc_raw.lda.predict_test$class
+wdbc_raw.lda.predict_test$x
+table(y,test_raw.df$TroubleInSleep)
+
+
+```
+INSIGHTS :
+
+For the training dataset:
+
+The LD1 values obtained from the Linear Discriminant Analysis (LDA) model for each observation represent the projected values onto the first linear discriminant.
+Based on the LD1 values, the table shows the distribution of predicted classes (0 and 1) compared to the actual classes of trouble in sleep.
+The table indicates that the model predicted 7 instances of class 0 (no trouble in sleep) correctly and misclassified 2 instances. Similarly, it correctly predicted 4 instances of class 1 (trouble in sleep) and misclassified 2 instances.
+For the test dataset:
+
+LD1 values are obtained for the test dataset.
+The table displays the distribution of predicted classes compared to the actual classes of trouble in sleep for the test dataset.
+In this case, 3 instances of class 0 were correctly predicted, while 2 instances were misclassified. Additionally, 1 instance of class 1 was correctly predicted, and 2 instances were misclassified.
+
+
+
+# RESIDUAL ANALYSIS
+```{r }
+# Get the posteriors as a dataframe.
+wdbc_raw.lda.predict.posteriors <- as.data.frame(wdbc_raw.lda.predict_test$posterior)
+
+
+```
+INSIGHTS :
+For each observation, the values in the posterior probability columns indicate the likelihood of the observation belonging to each class.
+Higher probabilities indicate a higher confidence in the model's prediction for that class.
+
+
+# PREDICTION 
+```{r }
+pred <- prediction(wdbc_raw.lda.predict.posteriors[,2], test_raw.df$TroubleInSleep)
+roc.perf = performance(pred, measure = "tpr", x.measure = "fpr")
+auc.train <- performance(pred, measure = "auc")
+auc.train <- auc.train@y.values
+plot(roc.perf)
+abline(a=0, b= 1)
+text(x = .25, y = .65 ,paste("AUC = ", round(auc.train[[1]],3), sep = ""))
+
+plot(wdbc_raw.lda, col = as.integer(train_raw.df$TroubleInSleep))
+plot(wdbc_raw.lda, dimen = 1, type = "b")
+
+m <- manova(cbind(wdbc$Instagram,wdbc$LinkedIn,wdbc$Snapchat,wdbc$Twitter)~wdbc$Trouble_sleep,data=wdbc)
+summary(m,test="Wilks")
+
+summary(m,test="Pillai")
+
+summary.aov(m)
+
+```
+INSIGHTS :
+
+The MANOVA results suggest that there's a lack of significant difference in the combined dependent variables (Instagram, LinkedIn, Snapchat, Twitter) across different levels of the Trouble_sleep factor. While Snapchat shows some significance, overall, the effect of Trouble_sleep on the combined dependent variables appears to be non-significant. Further analysis may be needed to explore individual relationships more thoroughly.
+
+
+
+
+
+
+
